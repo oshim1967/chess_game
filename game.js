@@ -6,18 +6,20 @@ import { getRandomMove } from './simple_ai.js?v=1752581823';
 const skillLevelInput = document.getElementById('skill-level');
 const newGameBtn = document.getElementById('new-game-btn');
 
-function getRandomComputerMove() {
-    const isWhite = Logic.isWhiteTurn;
-    return getRandomMove(gameState.board, isWhite);
-}
-
 let gameState = {
     board: [],
     playerColor: 'white',
     isComputerTurn: false,
     selectedPiece: null,
-    possibleMoves: []
+    possibleMoves: [],
+    positionHistory: [] // История позиций для троекратного повторения
 };
+
+function isThreefoldRepetition() {
+    const currentFen = getFen().split(' ').slice(0, 4).join(' '); // Сравниваем только позицию, ход и рокировки
+    const count = gameState.positionHistory.filter(fen => fen.split(' ').slice(0, 4).join(' ') === currentFen).length;
+    return count >= 2; // Текущая позиция будет 3-й
+}
 
 function startNewGame() {
     console.log("===== ВЕРСИЯ 1752581823 - ЗАПУСК НОВОЙ ИГРЫ =====");
@@ -27,6 +29,7 @@ function startNewGame() {
     gameState.isComputerTurn = false;
     gameState.selectedPiece = null;
     gameState.possibleMoves = [];
+    gameState.positionHistory = [getFen().split(' ').slice(0, 4).join(' ')]; // Сохраняем начальную позицию
     
     // Случайно выбираем цвет игрока
     const randomValue = Math.random();
@@ -93,11 +96,21 @@ function handleSquareClick(row, col) {
     }
 }
 
+function handleMove(fromRow, fromCol, toRow, toCol, promotionPiece = null) {
+    gameState.board = Logic.movePiece(gameState.board, fromRow, fromCol, toRow, toCol, promotionPiece);
+    gameState.positionHistory.push(getFen().split(' ').slice(0, 4).join(' '));
+    
+    UI.createBoard(gameState.board, gameState.playerColor, gameState.isComputerTurn);
+    updateStatus();
+
+    const isGameOver = updateStatus(); 
+    return isGameOver;
+}
+
 function handlePlayerMove(fromRow, fromCol, toRow, toCol) {
     console.log("👤 === НАЧАЛО ХОДА ИГРОКА ===");
     const piece = gameState.board[fromRow][fromCol];
     console.log("👤 Игрок делает ход:", piece, "from", fromRow, fromCol, "to", toRow, toCol);
-    console.log("📋 Доска ПЕРЕД ходом игрока:", JSON.stringify(gameState.board));
     
     let promotionPiece = null;
     if (piece.toLowerCase() === 'p' && (toRow === 0 || toRow === 7)) {
@@ -105,40 +118,23 @@ function handlePlayerMove(fromRow, fromCol, toRow, toCol) {
         promotionPiece = Logic.isWhiteTurn ? choice.toUpperCase() : choice.toLowerCase();
     }
 
-    const oldBoard = JSON.stringify(gameState.board);
-    gameState.board = Logic.movePiece(gameState.board, fromRow, fromCol, toRow, toCol, promotionPiece);
-    const newBoard = JSON.stringify(gameState.board);
+    const isGameOver = handleMove(fromRow, fromCol, toRow, toCol, promotionPiece);
     
-    console.log("📋 Доска ПОСЛЕ хода игрока:", newBoard);
-    console.log("🔄 Доска изменилась?", oldBoard !== newBoard);
-    console.log("🎯 Теперь ходят:", Logic.isWhiteTurn ? "белые" : "черные");
-    
-    UI.createBoard(gameState.board, gameState.playerColor, gameState.isComputerTurn);
-    updateStatus();
-
     console.log("👤 === КОНЕЦ ХОДА ИГРОКА ===");
-    if (!Logic.isCheckmate(Logic.isWhiteTurn, gameState.board) && !Logic.isThreefoldRepetition(gameState.board)) {
-        setTimeout(() => makeComputerMove(), 500); // Небольшая задержка для наглядности
+    if (!isGameOver) {
+        setTimeout(() => makeComputerMove(), 500);
     }
 }
 
 async function makeComputerMove() {
     console.log("🤖 === НАЧАЛО ХОДА КОМПЬЮТЕРА ===");
-    console.log("🎯 Цвет игрока:", gameState.playerColor);
-    console.log("🎯 Сейчас ходят:", Logic.isWhiteTurn ? "белые" : "черные");
-    
-    // Проверяем, действительно ли сейчас очередь компьютера
     const isComputersTurn = (gameState.playerColor === 'black' && Logic.isWhiteTurn) || 
                            (gameState.playerColor === 'white' && !Logic.isWhiteTurn);
-    
-    console.log("🎯 Очередь компьютера?", isComputersTurn);
     
     if (!isComputersTurn) {
         console.log("❌ Не очередь компьютера, пропускаем ход");
         return;
     }
-    
-    console.log("📋 Доска ПЕРЕД ходом компьютера:", JSON.stringify(gameState.board));
     
     gameState.isComputerTurn = true;
     updateStatus();
@@ -149,34 +145,22 @@ async function makeComputerMove() {
     const move = await getStockfishMove(fen, depth, gameState.board);
     console.log("📥 Получен ход от Lichess:", move);
 
-    if (move && move.fromRow !== undefined && move.fromCol !== undefined && move.toRow !== undefined && move.toCol !== undefined) {
+    if (move && move.fromRow !== undefined) {
         console.log("✅ Компьютер делает ход:", move);
-        const oldBoard = JSON.stringify(gameState.board);
-        gameState.board = Logic.movePiece(gameState.board, move.fromRow, move.fromCol, move.toRow, move.toCol);
-        const newBoard = JSON.stringify(gameState.board);
-        console.log("📋 Доска ПОСЛЕ хода компьютера:", newBoard);
-        console.log("🔄 Доска изменилась?", oldBoard !== newBoard);
-        console.log("🎯 Теперь ходят:", Logic.isWhiteTurn ? "белые" : "черные");
+        handleMove(move.fromRow, move.fromCol, move.toRow, move.toCol);
     } else {
         console.error("❌ Не удалось получить корректный ход от AI:", move);
-        // Попробуем получить случайный ход как крайнюю меру
         console.log("🎲 Пробуем получить случайный ход от simple_ai.js");
-        const isWhite = Logic.isWhiteTurn;
-        const randomMove = getRandomMove(gameState.board, isWhite);
+        const randomMove = getRandomMove(gameState.board, Logic.isWhiteTurn);
         if (randomMove) {
             console.log("🎲 Используем случайный ход от simple_ai:", randomMove);
-            const oldBoard = JSON.stringify(gameState.board);
-            gameState.board = Logic.movePiece(gameState.board, randomMove.fromRow, randomMove.fromCol, randomMove.toRow, randomMove.toCol);
-            const newBoard = JSON.stringify(gameState.board);
-            console.log("📋 Доска ПОСЛЕ случайного хода:", newBoard);
-            console.log("🔄 Доска изменилась?", oldBoard !== newBoard);
+            handleMove(randomMove.fromRow, randomMove.fromCol, randomMove.toRow, randomMove.toCol);
         } else {
             console.error("❌ Не удалось найти никакого хода для компьютера");
         }
     }
     
     gameState.isComputerTurn = false;
-    UI.createBoard(gameState.board, gameState.playerColor, gameState.isComputerTurn);
     updateStatus();
     console.log("🤖 === КОНЕЦ ХОДА КОМПЬЮТЕРА ===");
 }
@@ -184,17 +168,30 @@ async function makeComputerMove() {
 function updateStatus() {
     const isWhite = Logic.isWhiteTurn;
     let status = isWhite ? "Ход белых" : "Ход черных";
-    if (Logic.isCheckmate(isWhite, gameState.board)) {
-        status = isWhite ? "Черные победили - Мат!" : "Белые победили - Мат!";
-    } else if (Logic.isThreefoldRepetition(gameState.board)) {
-        status = "Ничья - Троекратное повтор��ние";
-    } else if (Logic.isKingInCheck(isWhite, gameState.board)) {
-        status += " - Шах!";
+    let isGameOver = false;
+
+    const hasMoves = Logic.hasLegalMoves(gameState.board, isWhite);
+
+    if (Logic.isKingInCheck(isWhite, gameState.board)) {
+        if (!hasMoves) {
+            status = isWhite ? "Черные победили - Мат!" : "Белые победили - Мат!";
+            isGameOver = true;
+        } else {
+            status += " - Шах!";
+        }
+    } else if (!hasMoves) {
+        status = "Ничья - Пат!";
+        isGameOver = true;
+    } else if (isThreefoldRepetition()) {
+        status = "Ничья - Троекратное повторение";
+        isGameOver = true;
     }
-    if(gameState.isComputerTurn) {
+
+    if(gameState.isComputerTurn && !isGameOver) {
         status = "Компьютер думает...";
     }
     UI.updateStatus(status);
+    return isGameOver;
 }
 
 export function getFen() {
@@ -219,7 +216,19 @@ export function getFen() {
     if (Logic.castlingRights.w.q) castling += 'Q';
     if (Logic.castlingRights.b.k) castling += 'k';
     if (Logic.castlingRights.b.q) castling += 'q';
-    fen += ` ${castling || '-'} - 0 1`;
+    fen += ` ${castling || '-'}`;
+
+    const enPassant = Logic.getEnPassantTarget();
+    if (enPassant) {
+        const col = String.fromCharCode('a'.charCodeAt(0) + enPassant.c);
+        const row = 8 - enPassant.r;
+        fen += ` ${col}${row}`;
+    } else {
+        fen += ' -';
+    }
+
+    fen += ` ${Logic.getHalfmoveClock()} ${Logic.getFullmoveNumber()}`;
+    
     return fen;
 }
 

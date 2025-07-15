@@ -1,17 +1,13 @@
 export let isWhiteTurn = true;
 let enPassantTarget = null;
 export let castlingRights = { w: { k: true, q: true }, b: { k: true, q: true } };
-let positionHistory = [];
+let halfmoveClock = 0;
+let fullmoveNumber = 1;
 
-function boardToString(boardState) {
-    return boardState.map(row => row.join(',')).join('|');
-}
-
-export function isThreefoldRepetition(board) {
-    const currentPosition = boardToString(board);
-    const count = positionHistory.filter(pos => pos === currentPosition).length;
-    return count >= 2;
-}
+// Геттеры для FEN
+export const getEnPassantTarget = () => enPassantTarget;
+export const getHalfmoveClock = () => halfmoveClock;
+export const getFullmoveNumber = () => fullmoveNumber;
 
 export function initializeBoard() {
     const newBoard = [
@@ -27,7 +23,8 @@ export function initializeBoard() {
     isWhiteTurn = true;
     enPassantTarget = null;
     castlingRights = { w: { k: true, q: true }, b: { k: true, q: true } };
-    positionHistory = [boardToString(newBoard)];
+    halfmoveClock = 0;
+    fullmoveNumber = 1;
     return newBoard;
 }
 
@@ -35,29 +32,71 @@ export function movePiece(board, fromRow, fromCol, toRow, toCol, promotionPiece 
     const newBoard = JSON.parse(JSON.stringify(board));
     const piece = newBoard[fromRow][fromCol];
 
-    // En Passant
-    if (piece.toLowerCase() === 'p' && enPassantTarget && toRow === enPassantTarget.r && toCol === enPassantTarget.c) {
-        const isWhitePiece = piece === piece.toUpperCase();
-        const capturedPawnRow = isWhitePiece ? toRow + 1 : toRow - 1;
-        newBoard[capturedPawnRow][toCol] = '';
-    }
-    
-    // Move piece
-    const capturedPiece = newBoard[toRow][toCol];
-    console.log(`🔄 Перемещение: ${piece} с ${fromRow},${fromCol} на ${toRow},${toCol}`);
-    if (capturedPiece) {
-        console.log(`🎯 Захватываем фигуру: ${capturedPiece}`);
-    }
-    newBoard[toRow][toCol] = piece;
-    newBoard[fromRow][fromCol] = '';
+    // Улучшенная логика рокировки
+    if (piece.toLowerCase() === 'k' && Math.abs(fromCol - toCol) >= 2) {
+        const rookRow = fromRow;
+        let rookCol, newRookCol, kingDestCol;
 
-    // Promotion - только для пешек
+        // Определяем тип рокировки по целевой колонке
+        if (toCol > fromCol) { // Короткая рокировка
+            rookCol = 7;
+            newRookCol = 5;
+            kingDestCol = 6;
+        } else { // Длинная рокировка
+            rookCol = 0;
+            newRookCol = 3;
+            kingDestCol = 2;
+        }
+        
+        console.log(`🏰 Улучшенная рокировка: перемещаем ладью с ${rookRow},${rookCol} на ${rookRow},${newRookCol}`);
+
+        // Перемещаем короля на правильное конечное поле
+        newBoard[rookRow][kingDestCol] = piece;
+        newBoard[fromRow][fromCol] = ''; // Освобождаем начальное поле короля
+
+        // Перемещаем ладью
+        const rook = newBoard[rookRow][rookCol];
+        newBoard[rookRow][newRookCol] = rook;
+        newBoard[rookRow][rookCol] = '';
+
+        // Если API вернуло нестандартный ход (например, e1h1), очищаем это поле
+        if (toCol !== kingDestCol) {
+            newBoard[toRow][toCol] = '';
+        }
+    } else {
+        // Обычная логика хода
+        const capturedPiece = newBoard[toRow][toCol];
+
+        // Сброс счетчика полуходов при взятии или ходе пешки
+        if (capturedPiece || piece.toLowerCase() === 'p') {
+            halfmoveClock = 0;
+        } else {
+            halfmoveClock++;
+        }
+
+        // Взятие на проходе
+        if (piece.toLowerCase() === 'p' && enPassantTarget && toRow === enPassantTarget.r && toCol === enPassantTarget.c) {
+            const isWhitePiece = piece === piece.toUpperCase();
+            const capturedPawnRow = isWhitePiece ? toRow + 1 : toRow - 1;
+            newBoard[capturedPawnRow][toCol] = '';
+        }
+        
+        // Перемещение фигуры
+        console.log(`🔄 Перемещение: ${piece} с ${fromRow},${fromCol} на ${toRow},${toCol}`);
+        if (capturedPiece) {
+            console.log(`🎯 Захватываем фигуру: ${capturedPiece}`);
+        }
+        newBoard[toRow][toCol] = piece;
+        newBoard[fromRow][fromCol] = '';
+    }
+
+    // Promotion - only for pawns
     if (piece.toLowerCase() === 'p' && (toRow === 0 || toRow === 7)) {
         const isWhitePiece = piece === piece.toUpperCase();
         newBoard[toRow][toCol] = promotionPiece || (isWhitePiece ? 'Q' : 'q');
     }
 
-    // Castling
+    // Update castling rights
     if (piece.toLowerCase() === 'k') {
         const isWhitePiece = piece === piece.toUpperCase();
         if (isWhitePiece) {
@@ -66,17 +105,6 @@ export function movePiece(board, fromRow, fromCol, toRow, toCol, promotionPiece 
         } else {
             castlingRights.b.k = false;
             castlingRights.b.q = false;
-        }
-        // Move rook if castling
-        if (Math.abs(fromCol - toCol) === 2) {
-            const rookCol = toCol === 6 ? 7 : 0;
-            const newRookCol = toCol === 6 ? 5 : 3;
-            const rookRow = fromRow; // Ладья всегда на том же ряду, что и король
-            console.log(`🏰 Рокировка: перемещаем ладью с ${rookRow},${rookCol} на ${rookRow},${newRookCol}`);
-            console.log(`🏰 Ладья до рокировки:`, newBoard[rookRow][rookCol]);
-            newBoard[rookRow][newRookCol] = newBoard[rookRow][rookCol];
-            newBoard[rookRow][rookCol] = '';
-            console.log(`🏰 Ладья после рокировки:`, newBoard[rookRow][newRookCol]);
         }
     }
     if (piece.toLowerCase() === 'r') {
@@ -97,8 +125,11 @@ export function movePiece(board, fromRow, fromCol, toRow, toCol, promotionPiece 
     
     // Switch turn
     isWhiteTurn = !isWhiteTurn;
-    
-    positionHistory.push(boardToString(newBoard));
+
+    // Увеличиваем номер хода после хода черных
+    if (isWhiteTurn) {
+        fullmoveNumber++;
+    }
     
     return newBoard;
 }
@@ -253,6 +284,20 @@ export function isCheckmate(isWhite, boardState) {
         }
     }
     return true; // In check and no legal moves
+}
+
+export function hasLegalMoves(board, isWhite) {
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const piece = board[r][c];
+            if (piece && (isWhite === (piece === piece.toUpperCase()))) {
+                if (getLegalMoves(board, r, c).length > 0) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 // Functions for testing
