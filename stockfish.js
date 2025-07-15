@@ -1,4 +1,4 @@
-import { getFen } from './game.js?v=1752581823';
+import { getFen } from './game.js?v=1752586932';
 
 // Настройки уровней сложности для Lichess API
 const SKILL_LEVELS = {

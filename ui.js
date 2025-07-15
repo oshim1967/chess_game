@@ -29,7 +29,7 @@ export function updateSkillLabel(level) {
     skillLabel.textContent = 'Разряд: ' + getSkillTitle(level);
 }
 
-export function createBoard(board, playerColor, isComputerTurn) {
+export function createBoard(board, playerColor) {
     boardContainer.innerHTML = '';
     document.querySelectorAll('body > .piece.dragging').forEach(el => el.remove());
 
@@ -60,7 +60,7 @@ export function createBoard(board, playerColor, isComputerTurn) {
                 }
                 pieceElement.innerText = pieceToUnicode[piece];
                 pieceElement.id = `piece-${i}-${j}`;
-                attachPointerHandlers(pieceElement, i, j, isComputerTurn);
+                attachPointerHandlers(pieceElement, i, j);
                 square.appendChild(pieceElement);
             }
             fragment.appendChild(square);
@@ -70,10 +70,9 @@ export function createBoard(board, playerColor, isComputerTurn) {
     console.log(`Создано ${squareCount} клеток.`);
 }
 
-function attachPointerHandlers(pieceElement, row, col, isComputerTurn) {
+function attachPointerHandlers(pieceElement, row, col) {
     pieceElement.onpointerdown = (e) => {
-        if (isComputerTurn) return;
-        
+        // Убираем проверку isComputerTurn - она уже в game.js
         onPieceDragStartCallback(row, col, e);
 
         pieceElement.setPointerCapture(e.pointerId);

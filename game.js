@@ -1,7 +1,7 @@
-import * as UI from './ui.js?v=1752581823';
-import * as Logic from './chess_logic.js?v=1752581823';
-import { getComputerMove as getStockfishMove } from './stockfish.js?v=1752581823';
-import { getRandomMove } from './simple_ai.js?v=1752581823';
+import * as UI from './ui.js?v=1752586932';
+import * as Logic from './chess_logic.js?v=1752586932';
+import { getComputerMove as getStockfishMove } from './stockfish.js?v=1752586932';
+import { getRandomMove } from './simple_ai.js?v=1752586932';
 
 const skillLevelInput = document.getElementById('skill-level');
 const newGameBtn = document.getElementById('new-game-btn');
@@ -22,7 +22,7 @@ function isThreefoldRepetition() {
 }
 
 function startNewGame() {
-    console.log("===== ВЕРСИЯ 1752581823 - ЗАПУСК НОВОЙ ИГРЫ =====");
+    console.log("===== ВЕРСИЯ 1752586932 - ЗАПУСК НОВОЙ ИГРЫ =====");
     
     // Сбросим игровое состояние
     gameState.board = Logic.initializeBoard();
@@ -41,7 +41,7 @@ function startNewGame() {
     console.log("📊 Уровень сложности:", skillLevelInput.value);
     console.log("📋 Состояние доски после инициализации:", gameState.board);
     
-    UI.createBoard(gameState.board, gameState.playerColor, gameState.isComputerTurn);
+    UI.createBoard(gameState.board, gameState.playerColor);
     updateStatus();
 
     // Компьютер ходит первым, если игрок играет черными (компьютер играет белыми)
@@ -100,7 +100,7 @@ function handleMove(fromRow, fromCol, toRow, toCol, promotionPiece = null) {
     gameState.board = Logic.movePiece(gameState.board, fromRow, fromCol, toRow, toCol, promotionPiece);
     gameState.positionHistory.push(getFen().split(' ').slice(0, 4).join(' '));
     
-    UI.createBoard(gameState.board, gameState.playerColor, gameState.isComputerTurn);
+    UI.createBoard(gameState.board, gameState.playerColor);
     updateStatus();
 
     const isGameOver = updateStatus(); 
@@ -267,7 +267,7 @@ function onPieceDragStart(row, col, event) {
 
 function onPieceDrop(targetSquare) {
     if (!targetSquare || !gameState.selectedPiece) {
-        UI.createBoard(gameState.board, gameState.playerColor, gameState.isComputerTurn);
+        UI.createBoard(gameState.board, gameState.playerColor);
         return;
     };
 
@@ -278,7 +278,7 @@ function onPieceDrop(targetSquare) {
     if (isValidMove) {
         handlePlayerMove(gameState.selectedPiece.row, gameState.selectedPiece.col, toRow, toCol);
     } else {
-        UI.createBoard(gameState.board, gameState.playerColor, gameState.isComputerTurn);
+        UI.createBoard(gameState.board, gameState.playerColor);
     }
     
     gameState.selectedPiece = null;

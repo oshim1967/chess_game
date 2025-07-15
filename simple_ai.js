@@ -1,4 +1,4 @@
-import * as Logic from './chess_logic.js?v=1752581823';
+import * as Logic from './chess_logic.js?v=1752586932';
 
 export function getRandomMove(board, isWhite) {
     const allMoves = [];

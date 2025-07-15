@@ -6,9 +6,9 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Шахматы - v1752581823</title>
+    <title>Шахматы - v1752586932</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>♟️</text></svg>">
-    <link rel="stylesheet" href="chess_style.css?v=1752581823">
+    <link rel="stylesheet" href="chess_style.css?v=1752586932">
     <style>
         #board-container {
             display: grid !important;
@@ -21,7 +21,7 @@
 </head>
 <body>
 <div id="cache-notice" style="position: fixed; top: 0; left: 0; right: 0; background: #4CAF50; color: white; padding: 10px; text-align: center; z-index: 9999; font-family: Arial, sans-serif; font-size: 14px; display: none;">
-    ✅ Обновлено до версии 1752581823. Исправлена рокировка. Если возникают проблемы, нажмите Ctrl+F5 для обновления кэша.
+    ✅ Обновлено до версии 1752586932. Исправлена проблема с замыканиями. Если возникают проблемы, нажмите Ctrl+F5 для обновления кэша.
     <button onclick="this.parentElement.style.display='none'" style="background: none; border: none; color: white; margin-left: 10px; cursor: pointer;">×</button>
 </div>
 <main class="chess-app">
@@ -58,12 +58,12 @@
         <h2 id="status-text">White's Turn</h2>
     </aside>
 </main>
-<script src="game.js?v=1752581823" type="module"></script>
+<script src="game.js?v=1752586932" type="module"></script>
 <script>
 // Show version notice and force cache refresh if needed
 document.addEventListener('DOMContentLoaded', function() {
     const notice = document.getElementById('cache-notice');
-    const expectedVersion = '1752581823';
+    const expectedVersion = '1752586932';
     
     // Check if we're loading the correct version
     setTimeout(() => {
