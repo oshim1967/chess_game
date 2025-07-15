@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Шахматы - v1752581823</title>
+    <link rel="stylesheet" href="chess_style.css?v=1752581823">
+    <style>
+        #board-container {
+            display: grid !important;
+            grid-template-columns: repeat(8, 1fr) !important;
+            grid-template-rows: repeat(8, 1fr) !important;
+            width: 600px !important;
+            height: 600px !important;
+        }
+    </style>
+</head>
+<body>
+<div id="cache-notice" style="position: fixed; top: 0; left: 0; right: 0; background: #4CAF50; color: white; padding: 10px; text-align: center; z-index: 9999; font-family: Arial, sans-serif; font-size: 14px; display: none;">
+    ✅ Обновлено до версии 1752581823. Исправлена рокировка. Если возникают проблемы, нажмите Ctrl+F5 для обновления кэша.
+    <button onclick="this.parentElement.style.display='none'" style="background: none; border: none; color: white; margin-left: 10px; cursor: pointer;">×</button>
+</div>
+<main class="chess-app">
+    <section class="board-section">
+        <div id="board-container" class="chess-board"></div>
+    </section>
+    <nav id="bottom-panel" class="bottom-panel">
+        <div class="panel-zone left">
+            <button id="settings-btn" class="settings-btn" aria-label="Настройки">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b58863" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 8a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 16 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06-.06A1.65 1.65 0 0 0 19.4 8c.14.31.22.65.22 1v.09A1.65 1.65 0 0 0 21 12c0 .35-.08.69-.22 1z"/></svg>
+            </button>
+        </div>
+        <div class="panel-zone center">
+            <div class="difficulty-slider">
+                <label for="skill-level">Сложность:</label>
+                <input type="range" id="skill-level" min="1" max="20" value="10" class="modern-range">
+                <span id="skill-label">Разряд: 2-й</span>
+            </div>
+            <div class="animation-dropdown">
+                <select id="animation-style">
+                    <option value="slide">Плавное</option>
+                    <option value="jump">Прыжок</option>
+                    <option value="fade">Появление</option>
+                </select>
+            </div>
+        </div>
+        <div class="panel-zone right">
+            <button id="new-game-btn" class="new-game-btn">Новая партия</button>
+        </div>
+    </nav>
+    <aside id="panel-overlay" class="panel-overlay"></aside>
+    <aside id="status-panel" class="side-panel modern-panel">
+        <button id="close-panel-btn" class="close-panel-btn" aria-label="Закрыть панель">×</button>
+        <h2 id="status-text">White's Turn</h2>
+    </aside>
+</main>
+<script src="game.js?v=1752581823" type="module"></script>
+<script>
+// Show version notice and force cache refresh if needed
+document.addEventListener('DOMContentLoaded', function() {
+    const notice = document.getElementById('cache-notice');
+    const expectedVersion = '1752581823';
+    
+    // Check if we're loading the correct version
+    setTimeout(() => {
+        const scripts = document.querySelectorAll('script[src*="game.js"]');
+        let currentVersion = 'unknown';
+        if (scripts.length > 0) {
+            const src = scripts[0].src;
+            const versionMatch = src.match(/v=([^&]+)/);
+            if (versionMatch) {
+                currentVersion = versionMatch[1];
+            }
+        }
+        
+        console.log('🔄 Версия загружена:', currentVersion);
+        console.log('🎯 Ожидаемая версия:', expectedVersion);
+        
+        if (currentVersion !== expectedVersion) {
+            notice.style.display = 'block';
+            notice.style.background = '#ff5722';
+            notice.innerHTML = `⚠️ Обнаружена старая версия (${currentVersion}). Нажмите Ctrl+F5 для обновления кэша! <button onclick="location.reload(true)" style="background: none; border: none; color: white; margin-left: 10px; cursor: pointer;">Обновить</button>`;
+        } else {
+            notice.style.display = 'block';
+            setTimeout(() => {
+                notice.style.display = 'none';
+            }, 3000);
+        }
+    }, 1000);
+});
+</script>
+</body>
+</html>
